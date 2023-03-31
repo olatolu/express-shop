@@ -3,9 +3,9 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 
-const errorController = require('./controllers/error');
+const mongoose = require('mongoose');
 
-const mongoConnect = require('./util/database').mongoConnect;
+const errorController = require('./controllers/error');
 
 const User = require('./models/user');
 
@@ -21,9 +21,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-    User.findById('6422e0509d8ce12638bf4d23')
+
+    User.findById('642600b0ad25c8487c9d71de')
     .then(user => {
-        req.user = new User(user.username, user.email, user.cart, user._id);
+        req.user = user;
         next();
       }
     )
@@ -36,11 +37,25 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect((client) => {
-    // console.log(client);
 
+mongoose
+    .connect('mongodb+srv://node_shop:QswAK0H2yFYeufdL@mongodbc0.trx00jv.mongodb.net/node_shop')
+    .then(result => {
+        User.findOne()
+        .then(user => {
+            if(!user){
+                const user = new User({
+                    name: 'olatolu',
+                    email: 'test@test.com',
+                    cart:  {
+                        items: []
+                    }
+                })
+                user.save()
+            }
+        })
+        console.log('Dabase connected Successfully!')
+        app.listen(3000);
 
-    app.listen(3000);
-})
-
-
+    })
+    .catch(err => console.log(err));
