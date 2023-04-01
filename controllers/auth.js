@@ -1,7 +1,7 @@
 const User = require('../models/user');
 
 exports.getLogin = (req, res, next) => {
-  console.log(req.session.isLoggedIn);
+  console.log(req.session.user);
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
@@ -12,7 +12,7 @@ exports.getLogin = (req, res, next) => {
 
 exports.postLogin = (req, res, next) => {
 
-  User.findById('642600b0ad25c8487c9d71de')
+  User.findById('6428c1a72e6a643509f018f8')
   .then(user => {
       req.session.isLoggedIn = true;
       req.session.user = user;
@@ -25,10 +25,19 @@ exports.postLogin = (req, res, next) => {
   .catch(err => console.log(err))
 };
 
-exports.postLogout = (req, res, next) => {
+exports.getSignup = (req, res, next) => {
+  res.render('auth/signup', {
+    path: '/signup',
+    pageTitle: 'Signup',
+    isAuthenticated: false
+  });
+};
 
+exports.postSignup = (req, res, next) => {};
+
+exports.postLogout = (req, res, next) => {
   req.session.destroy(err => {
-      console.log(err);
-      res.redirect('/')
-    });
+    console.log(err);
+    res.redirect('/');
+  });
 };

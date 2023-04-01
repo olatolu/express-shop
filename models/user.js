@@ -3,13 +3,15 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-    name: {
-        type: String,
-        required: true
-    },
     email: {
         type: String,
-        required: true
+        required: true,       
+        index: true,
+        unique: true,
+    },
+    password: {
+        type: String,
+        required: true,
     },
     cart: {
         items: [
@@ -55,7 +57,7 @@ userSchema.methods.clearCart = function(){
     return this.save();
 }
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema, 'Users');
 
 // const getDb = require('../util/database').getDb;
 

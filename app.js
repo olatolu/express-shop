@@ -63,8 +63,8 @@ mongoose
         .then(user => {
             if(!user){
                 const user = new User({
-                    name: 'olatolu',
                     email: 'test@test.com',
+                    password: 'olatolu',
                     cart:  {
                         items: []
                     }
