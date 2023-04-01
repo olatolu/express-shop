@@ -8,6 +8,15 @@ const mongoose = require('mongoose');
 const errorController = require('./controllers/error');
 
 const User = require('./models/user');
+const session = require('express-session');
+const MongoDBStore = require('connect-mongo');
+
+const MONGODB_URI = 'mongodb+srv://node_shop:QswAK0H2yFYeufdL@mongodbc0.trx00jv.mongodb.net/node_shop';
+
+const storeSession = new MongoDBStore({
+    mongoUrl: MONGODB_URI,
+    collectionName: 'Sessions'
+})
 
 const app = express();
 
@@ -16,30 +25,39 @@ app.set('views', 'views');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session(
+    {secret: 'my secret', resave: false, saveUninitialized: false, store: storeSession}
+));
+
 
 app.use((req, res, next) => {
-
-    User.findById('642600b0ad25c8487c9d71de')
-    .then(user => {
-        req.user = user;
+    if(!req.session.user){
         next();
-      }
-    )
-    .catch(err => console.log(err))
+    }else{
+    User.findById(req.session.user._id)
+        .then(user => {
+            req.user = user;
+            next();
+        })
+        .catch(err => console.log(err))
+    }
 
 });
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(errorController.get404);
 
 
+
 mongoose
-    .connect('mongodb+srv://node_shop:QswAK0H2yFYeufdL@mongodbc0.trx00jv.mongodb.net/node_shop')
+    .connect(MONGODB_URI)
     .then(result => {
         User.findOne()
         .then(user => {
