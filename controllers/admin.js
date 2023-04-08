@@ -57,6 +57,9 @@ exports.postEditProduct = (req, res, next) => {
   const updatedImageUrl = req.body.imageUrl;
   const updatedDesc = req.body.description;
   Product.findById(prodId).then(product => {
+    if(product.userId.toString() !== req.user._id.toString()){
+      return res.redirect('/');
+    }
     product.title = updatedTitle;
     product.price = updatedPrice;
     product.imageUrl = updatedImageUrl;
@@ -73,7 +76,7 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find()
+  Product.find({userId: req.user._id})
     // .select('title price -_id') // Use to filter result
     // .populate('userId') //eagerload the relationship
     // .populate('userId', 'name -_id') //eagerload the relationship with filter
@@ -90,7 +93,8 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
+  // Product.findByIdAndRemove(prodId)
+  Product.deleteOne({ _id: prodId, userId: req.user._id })
   .then(
     result => {
       console.log('PRODUCT DELETED SUCESSFULLY!!');
