@@ -3,6 +3,8 @@ const Product = require("../models/product");
 const fs = require("fs");
 const path = require("path");
 
+const stripe = require('stripe')('sk_test_aiOenbOuZH2PMh8PSqVzXYQ3');
+
 const ITMES_PER_PAGE = 2;
 
 const PDFDocument = require("pdfkit");
@@ -10,6 +12,7 @@ const PDFDocument = require("pdfkit");
 const Order = require("../models/order");
 const { param } = require("express-validator");
 const order = require("../models/order");
+const product = require("../models/product");
 
 exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
@@ -87,6 +90,87 @@ exports.getCart = (req, res, next) => {
       });
     })
     .catch((err) => console.log(err));
+};
+exports.getCheckout = (req, res, next) => {
+  let products;
+  let total = 0;
+
+  req.user
+    .populate("cart.items.productId")
+    .then(user => {
+      products = user.cart.items;
+      total = 0;
+      products.forEach(p => {
+        total += p.quantity * p.productId.price;
+      });
+
+      return stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: products.map(p => {
+          return {
+            price_data: {
+              currency: 'usd',
+              unit_amount: p.productId.price * 100,
+              product_data: {
+                name: p.productId.title,
+                description: p.productId.description,
+              },
+            },
+            // name: p.productId.title,
+            // description: p.productId.description,
+            // amount: p.productId.price * 100,
+            // currency: 'usd',
+            quantity: p.quantity
+          };
+        }),
+        mode: 'payment',
+        success_url: req.protocol + '://' + req.get('host') + '/checkout/success', // => http://localhost:3000
+        cancel_url: req.protocol + '://' + req.get('host') + '/checkout/cancel'
+      });
+    })
+    .then(session => {
+      res.render('shop/checkout', {
+        path: '/checkout',
+        pageTitle: 'Checkout',
+        products: products,
+        totalSum: total,
+        sessionId: session.id
+      });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
+
+exports.getCheckoutSuccess = (req, res, next) => {
+  req.user
+  .populate("cart.items.productId")
+    .then(user => {
+      const products = user.cart.items.map(i => {
+        return { quantity: i.quantity, product: { ...i.productId._doc } };
+      });
+      const order = new Order({
+        user: {
+          name: req.user.email,
+          userId: req.user,
+        },
+        products: products,
+      });
+      return order.save();
+    })
+    .then(result => {
+      return req.user.clearCart();
+    })
+    .then(() => {
+      res.redirect('/orders');
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postCart = (req, res, next) => {
