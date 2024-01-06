@@ -3,6 +3,8 @@ const Product = require("../models/product");
 const fs = require("fs");
 const path = require("path");
 
+const ITMES_PER_PAGE = 2;
+
 const PDFDocument = require("pdfkit");
 
 const Order = require("../models/order");
@@ -10,21 +12,30 @@ const { param } = require("express-validator");
 const order = require("../models/order");
 
 exports.getProducts = (req, res, next) => {
-  Product.find()
-    .then((products) => {
+  const page = +req.query.page || 1;
+  let countofItems;
+
+  Product.countDocuments().then((numberOfProducts) => {
+    countofItems = numberOfProducts;
+    return Product.find()
+    .skip((page - 1) * ITMES_PER_PAGE)
+    .limit(ITMES_PER_PAGE);
+
+  }).then((products) => {
       res.render("shop/product-list", {
         prods: products,
         pageTitle: "All Products",
         path: "/products",
         isAuthenticated: req.session.user,
+        numberOfPages: Math.ceil(countofItems/ITMES_PER_PAGE),
+        currentPage: page,
+        totalItems: countofItems,
       });
     })
     .catch((err) => console.log(err));
 };
 
 exports.getProduct = (req, res, next) => {
-  const prodId = req.params.productId;
-
   Product.findById(prodId)
     .then((product) => {
       res.render("shop/product-detail", {
@@ -38,14 +49,26 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find()
-    .then((products) => {
+  const page = +req.query.page || 1;
+
+  let countofItems;
+
+  Product.countDocuments().then((numberOfProducts) => {
+    countofItems = numberOfProducts;
+    return Product.find()
+    .skip((page - 1) * ITMES_PER_PAGE)
+    .limit(ITMES_PER_PAGE);
+
+  }).then((products) => {
       res.render("shop/index", {
         prods: products,
         pageTitle: "Shop",
         path: "/",
         isAuthenticated: req.session.user,
         csrfToken: req.csrfToken(),
+        numberOfPages: Math.ceil(countofItems/ITMES_PER_PAGE),
+        currentPage: page,
+        totalItems: countofItems,
       });
     })
     .catch((err) => console.log(err));

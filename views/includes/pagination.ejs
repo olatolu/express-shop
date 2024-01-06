@@ -1,0 +1,9 @@
+<section class="pagination">
+    <% let i=1; while (i <= numberOfPages) { %>
+        <% if(i === currentPage) { %>
+            <a href="?page=<%= i %>" class="active"><%= i %></a>
+        <% } else{ %>
+            <a href="?page=<%= i %>"><%= i %></a>
+        <% } %>
+    <% i++; } %>
+</section>
