@@ -25,10 +25,13 @@ router.post('/add-product', isAuth, [
         .trim()
         .withMessage('Title must be a string and at least three characters long!'),
 
-        body('imageUrl')
-        .isURL()
-        .trim()
-        .withMessage('Image Url must be a valid url!'),
+        body('image')
+        .custom((value, {req}) => {
+            if (!req.file) {
+                throw new Error('Image must be a valid image!');
+            }
+            return true;
+        }),
         
         body('price')
         .isFloat()
@@ -50,10 +53,10 @@ router.post('/edit-product', isAuth, [
         .trim()
         .withMessage('Title must be a string and at least three characters long!'),
 
-        body('imageUrl')
-        .isURL()
-        .trim()
-        .withMessage('Image Url must be a valid url!'),
+        // body('imageUrl')
+        // .isURL()
+        // .trim()
+        // .withMessage('Image Url must be a valid url!'),
         
         body('price')
         .isFloat()
